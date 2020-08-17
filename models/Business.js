@@ -12,6 +12,7 @@ const BusinessSchema = new mongoose.Schema(
 			ref: 'User',
 			required: true,
 		},
+		keywords: [{ type: String }],
 		places: [
 			{
 				type: mongoose.Schema.Types.ObjectId,

@@ -1,6 +1,7 @@
 const express = require('express');
 const Business = require('../models/Business');
 const Place = require('../models/Place');
+const User = require('../models/User');
 const {
 	handleValidateId,
 	handleRecordExists,
@@ -26,7 +27,7 @@ router.get('/', (req, res, next) => {
 router.get('/:id', handleValidateId, (req, res, next) => {
 	Business.findById(req.params.id)
 		.populate('owner', 'email -_id')
-		.populate('places', 'location -_id')
+		// .populate('places', '-_id')
 		.then(handleRecordExists)
 		.then((business) => {
 			res.json(business);
@@ -45,11 +46,50 @@ router.get('/:id/places', handleValidateId, (req, res) => {
 		.catch((error) => console.log(error));
 });
 
+// PATCH to add a place to business
+// router.patch(
+// 	'/:id/addToOne',
+// 	handleValidateId,
+// 	requireToken,
+// 	(req, res, next) => {
+// 		Business.findByIdAndUpdate(req.params.id, { $addToSet: req.body })
+// 			.then((business) => handleValidateOwnership(req, business))
+// 			.then((business) => res.json(business))
+// 			.catch(next);
+// 	}
+// );
+
+router.patch(
+	'/:id/overwriteOne',
+	handleValidateId,
+	requireToken,
+	(req, res, next) => {
+		Business.findByIdAndUpdate(req.params.id)
+			.then(handleRecordExists)
+			.then((business) => handleValidateOwnership(req, business))
+			.then((business) => business.set(req.body).save())
+			.then((business) => {
+				res.json(business);
+			})
+			.catch(next);
+	}
+);
+
 // CREATE
 // POST api/businesses
 router.post('/', requireToken, (req, res, next) => {
-	Business.create({ ...req.body, owner: req.user._id })
-		.then((business) => res.status(201).json(business))
+	const newBusiness = req.body;
+	const userId = req.user._id;
+
+	User.findById(userId)
+		.then((user) => {
+			Business.create(newBusiness).then((business) => {
+				user.businesses.push(business);
+				user.save();
+				business.save();
+				res.json(business);
+			});
+		})
 		.catch(next);
 });
 
@@ -69,8 +109,7 @@ router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
 // DESTROY
 // DELETE api/businesses/5a7db6c74d55bc51bdf39793
 router.delete('/:id', handleValidateId, requireToken, (req, res, next) => {
-	business
-		.findById(req.params.id)
+	Business.findById(req.params.id)
 		.then(handleRecordExists)
 		.then((business) => handleValidateOwnership(req, business))
 		.then((business) => business.remove())

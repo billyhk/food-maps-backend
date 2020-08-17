@@ -55,6 +55,7 @@ router.post('/signin', (req, res, next) => {
 //route to get all users
 router.get('/', requireToken, (req, res) => {
 	User.find()
+		.populate('businesses', 'title -_id')
 		.then((users) => res.json(users))
 		.catch((error) => console.log(error));
 });
@@ -62,6 +63,8 @@ router.get('/', requireToken, (req, res) => {
 //route to get user by id
 router.get('/:id', requireToken, (req, res) => {
 	User.findOne({ id: req.params._id })
+		.populate('businesses', '-_id')
+
 		.then((user) => res.json(user))
 		.catch((error) => console.log(error));
 });
