@@ -2,12 +2,13 @@ const express = require('express');
 const bcrypt = require('bcrypt');
 const { createUserToken } = require('../middleware/auth');
 const User = require('../models/User');
-const Business = require('../models/Business')
-// const {
-// 	handleValidateId,
-// 	handleRecordExists,
-// 	handleValidateOwnership,
-// } = require('../middleware/custom_errors');
+const Business = require('../models/Business');
+const {
+	handleValidateId,
+	handleRecordExists,
+	handleValidateAuthRole,
+} = require('../middleware/custom_errors');
+const { ROLE } = require('../models/userRoles');
 const { requireToken } = require('../middleware/auth');
 
 const router = express.Router();
@@ -30,7 +31,7 @@ router.post('/signup', async (req, res, next) => {
 			email: req.body.email,
 			password,
 			username: req.body.username,
-			role: req.body.role
+			role: req.body.role,
 		});
 		res.status(201).json(user);
 	} catch (error) {
@@ -53,47 +54,55 @@ router.post('/signin', (req, res, next) => {
 });
 
 //route to get all users
-router.get('/', requireToken, (req, res) => {
-	User.find()
-		.populate('businesses', 'title -_id')
-		.then((users) => res.json(users))
-		.catch((error) => console.log(error));
-});
+router.get(
+	'/',
+	requireToken,
+	handleValidateAuthRole(ROLE.ADMIN),
+	(req, res) => {
+		User.find()
+			.populate('businesses', 'title -_id')
+			.then((users) => res.json(users))
+			.catch((error) => console.log(error));
+	}
+);
 
 //route to get user by id
-router.get('/:id', requireToken, (req, res) => {
+router.get('/:id', requireToken, handleValidateId, (req, res) => {
 	User.findOne({ id: req.params._id })
+		.then(handleRecordExists)
 		.populate('businesses', '-_id')
-
 		.then((user) => res.json(user))
 		.catch((error) => console.log(error));
 });
 
 //route to edit user information
-router.put('/:id', requireToken, (req, res) => {
+router.put('/:id', requireToken, handleValidateId, (req, res) => {
 	User.findOneAndUpdate({ id: req.params._id }, req.body, {
 		new: true,
 	})
+		.then(handleRecordExists)
 		.then((user) => res.json(user))
 		.catch((error) => console.log(error));
 });
 
 //route to delete account by id
 //find id and delete
-router.delete('/:id', requireToken, (req, res) => {
+router.delete('/:id', requireToken, handleValidateId, (req, res) => {
 	User.findOneAndDelete({ id: req.params._id })
+		.then(handleRecordExists)
 		.then((user) => res.json(user))
 		.catch((error) => console.log(error));
 });
 
 //route to get businesses by user
-router.get('/:id/businesses', requireToken, (req, res) => {
+router.get('/:id/businesses', handleValidateId, requireToken, (req, res) => {
 	User.findOne({ id: req.params._id })
 		.then((user) => {
-				Business.find({ _id: { $in: user.businesses } })
-				.then((businessesList) => res.json(businessesList))
+			Business.find({ _id: { $in: user.businesses } }).then((businessesList) =>
+				res.json(businessesList)
+			);
 		})
 		.catch((error) => console.log(error));
-})
+});
 
 module.exports = router;

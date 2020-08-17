@@ -2,10 +2,13 @@ const express = require('express');
 const Business = require('../models/Business');
 const Place = require('../models/Place');
 const User = require('../models/User');
+const { ROLE } = require('../models/userRoles');
+
 const {
 	handleValidateId,
 	handleRecordExists,
 	handleValidateOwnership,
+	handleValidateAuthRole,
 } = require('../middleware/custom_errors');
 const { requireToken } = require('../middleware/auth');
 const router = express.Router();
@@ -46,7 +49,7 @@ router.get('/:id/places', handleValidateId, (req, res) => {
 		.catch((error) => console.log(error));
 });
 
-// PATCH to add a place to business
+// PATCH to add to a properties value as array (only if item doesn't already exist)
 // router.patch(
 // 	'/:id/addToOne',
 // 	handleValidateId,
@@ -62,6 +65,8 @@ router.get('/:id/places', handleValidateId, (req, res) => {
 router.patch(
 	'/:id/overwriteOne',
 	handleValidateId,
+	handleValidateOwnership,
+	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
 	requireToken,
 	(req, res, next) => {
 		Business.findByIdAndUpdate(req.params.id)
@@ -77,46 +82,63 @@ router.patch(
 
 // CREATE
 // POST api/businesses
-router.post('/', requireToken, (req, res, next) => {
-	const newBusiness = req.body;
-	const userId = req.user._id;
+router.post(
+	'/',
+	requireToken,
+	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
+	(req, res, next) => {
+		const newBusiness = req.body;
+		const userId = req.user._id;
 
-	User.findById(userId)
-		.then((user) => {
-			Business.create(newBusiness).then((business) => {
-				user.businesses.push(business);
-				user.save();
-				business.save();
-				res.json(business);
-			});
-		})
-		.catch(next);
-});
+		User.findById(userId)
+			.then((user) => {
+				Business.create(newBusiness).then((business) => {
+					user.businesses.push(business);
+					user.save();
+					business.save();
+					res.json(business);
+				});
+			})
+			.catch(next);
+	}
+);
 
 // UPDATE
 // PUT api/businesses/5a7db6c74d55bc51bdf39793
-router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
-	Business.findById(req.params.id)
-		.then(handleRecordExists)
-		.then((business) => handleValidateOwnership(req, business))
-		.then((business) => business.set(req.body).save())
-		.then((business) => {
-			res.json(business);
-		})
-		.catch(next);
-});
+router.put(
+	'/:id',
+	handleValidateId,
+	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
+	requireToken,
+	(req, res, next) => {
+		Business.findById(req.params.id)
+			.then(handleRecordExists)
+			.then((business) => handleValidateOwnership(req, business))
+			.then((business) => business.set(req.body).save())
+			.then((business) => {
+				res.json(business);
+			})
+			.catch(next);
+	}
+);
 
 // DESTROY
 // DELETE api/businesses/5a7db6c74d55bc51bdf39793
-router.delete('/:id', handleValidateId, requireToken, (req, res, next) => {
-	Business.findById(req.params.id)
-		.then(handleRecordExists)
-		.then((business) => handleValidateOwnership(req, business))
-		.then((business) => business.remove())
-		.then(() => {
-			res.sendStatus(204);
-		})
-		.catch(next);
-});
+router.delete(
+	'/:id',
+	handleValidateId,
+	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
+	requireToken,
+	(req, res, next) => {
+		Business.findById(req.params.id)
+			.then(handleRecordExists)
+			.then((business) => handleValidateOwnership(req, business))
+			.then((business) => business.remove())
+			.then(() => {
+				res.sendStatus(204);
+			})
+			.catch(next);
+	}
+);
 
 module.exports = router;

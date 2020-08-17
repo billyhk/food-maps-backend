@@ -1,5 +1,7 @@
 // Require Mongoose so we can use it later in our handlers
 const mongoose = require('mongoose');
+const { ROLE } = require('../models/userRoles');
+
 
 // Create some custom error types by extending the Javascript
 // `Error.prototype` using the ES6 class syntax.  This  allows
@@ -13,6 +15,15 @@ class OwnershipError extends Error {
 		this.statusCode = 401;
 		this.message =
 			'The provided token does not match the owner of this document';
+	}
+}
+
+class RoleUnauthorizedError extends Error {
+	constructor() {
+		super();
+		this.name = 'RoleUnauthorizedError';
+		this.statusCode = 403
+		this.message = 'Not Allowed';
 	}
 }
 
@@ -55,7 +66,7 @@ class InvalidIdError extends Error {
 const handleValidateOwnership = (req, document) => {
 	const ownerId = document.owner._id || document.owner;
 	// Check if the current user is also the owner of the document
-	if (!req.user._id.equals(ownerId)) {
+	if (!req.user._id.equals(ownerId) || !req.user.role.equals(ROLE.ADMIN)) {
 		throw new OwnershipError();
 	} else {
 		return document;
@@ -77,6 +88,15 @@ const handleValidateId = (req, res, next) => {
 	} else {
 		next();
 	}
+};
+
+const handleValidateAuthRole = (role) => {
+	return (req, res, next) => {
+		if (req.user.role !== role) {
+			throw new RoleUnauthorizedError();
+		}
+		next();
+	};
 };
 
 const handleValidationErrors = (err, req, res, next) => {
@@ -108,5 +128,6 @@ module.exports = {
 	handleRecordExists,
 	handleValidateId,
 	handleValidationErrors,
+	handleValidateAuthRole,
 	handleErrors,
 };
