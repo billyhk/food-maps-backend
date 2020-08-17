@@ -66,43 +66,49 @@ router.get(
 	}
 );
 
-//route to get user by id
-router.get('/:id', requireToken, handleValidateId, (req, res) => {
-	User.findOne({ id: req.params._id })
-		.then(handleRecordExists)
+//route to get user by username
+router.get('/:username', requireToken, (req, res) => {
+	User.findOne({ username: req.params.username })
+		// .then(handleRecordExists)
 		.populate('businesses', '-_id')
 		.then((user) => res.json(user))
 		.catch((error) => console.log(error));
 });
 
 //route to edit user information
-router.put('/:id', requireToken, handleValidateId, (req, res) => {
-	User.findOneAndUpdate({ id: req.params._id }, req.body, {
+router.put('/:username', requireToken, (req, res) => {
+	User.findOneAndUpdate({ username: req.params.username }, req.body, {
 		new: true,
 	})
-		.then(handleRecordExists)
 		.then((user) => res.json(user))
 		.catch((error) => console.log(error));
 });
 
 //route to delete account by id
 //find id and delete
-router.delete('/:id', requireToken, handleValidateId, (req, res) => {
-	User.findOneAndDelete({ id: req.params._id })
-		.then(handleRecordExists)
-		.then((user) => res.json(user))
+router.delete('/:username', requireToken, (req, res) => {
+	User.findOne({ username: req.params.username })
+		// .then(handleRecordExists)
+		.then((user) => user.remove())
+		.then(() => {
+			res.sendStatus(204);
+		})
 		.catch((error) => console.log(error));
 });
 
 //route to get businesses by user
-router.get('/:id/businesses', handleValidateId, requireToken, (req, res) => {
-	User.findOne({ id: req.params._id })
-		.then((user) => {
-			Business.find({ _id: { $in: user.businesses } }).then((businessesList) =>
-				res.json(businessesList)
-			);
-		})
-		.catch((error) => console.log(error));
-});
+router.get(
+	'/:username/businesses',
+		requireToken,
+	(req, res) => {
+		User.findOne({ username: req.params.username })
+			.then((user) => {
+				Business.find({
+					_id: { $in: user.businesses },
+				}).then((businessesList) => res.json(businessesList));
+			})
+			.catch((error) => console.log(error));
+	}
+);
 
 module.exports = router;
