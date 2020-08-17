@@ -16,6 +16,7 @@ const {
 router.get('/', (req, res) => {
 	Place.find()
 		.populate('business', '_id')
+		.populate('owner', 'username -_id')
 		.then((places) => res.json(places))
 		.catch((error) => console.log(error));
 });

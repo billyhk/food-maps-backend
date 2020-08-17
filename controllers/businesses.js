@@ -20,7 +20,7 @@ router.get('/', (req, res, next) => {
 	// in the businesses collection
 	// Then send all of the businesses back as json
 	Business.find()
-		.populate('owner', 'email -_id')
+		.populate('owner', 'username -_id')
 		.populate('places', 'location -_id')
 		.then((businesses) => res.json(businesses));
 });
@@ -29,7 +29,7 @@ router.get('/', (req, res, next) => {
 // GET api/businesses/5a7db6c74d55bc51bdf39793
 router.get('/:id', handleValidateId, (req, res, next) => {
 	Business.findById(req.params.id)
-		.populate('owner', 'email -_id')
+		.populate('owner', 'username -_id')
 		// .populate('places', '-_id')
 		.then(handleRecordExists)
 		.then((business) => {
