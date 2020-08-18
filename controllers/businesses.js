@@ -30,6 +30,7 @@ router.get('/', (req, res, next) => {
 router.get('/:id', handleValidateId, (req, res, next) => {
 	Business.findById(req.params.id)
 		.populate('owner', 'username -_id')
+		.populate('places', 'location -_id')
 		// .populate('places', '-_id')
 		.then(handleRecordExists)
 		.then((business) => {
@@ -85,7 +86,7 @@ router.patch(
 router.post(
 	'/',
 	requireToken,
-	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
+	handleValidateAuthRole(ROLE.BUSINESS || ROLE.ADMIN),
 	(req, res, next) => {
 		const newBusiness = req.body;
 		const userId = req.user._id;
@@ -127,7 +128,7 @@ router.put(
 router.delete(
 	'/:id',
 	handleValidateId,
-	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
+	handleValidateAuthRole(ROLE.BUSINESS || ROLE.ADMIN),
 	requireToken,
 	(req, res, next) => {
 		Business.findById(req.params.id)

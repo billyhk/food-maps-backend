@@ -2,7 +2,6 @@
 const mongoose = require('mongoose');
 const { ROLE } = require('../models/userRoles');
 
-
 // Create some custom error types by extending the Javascript
 // `Error.prototype` using the ES6 class syntax.  This  allows
 // us to add arbitrary data for our status code to the error
@@ -22,7 +21,7 @@ class RoleUnauthorizedError extends Error {
 	constructor() {
 		super();
 		this.name = 'RoleUnauthorizedError';
-		this.statusCode = 403
+		this.statusCode = 403;
 		this.message = 'Not Allowed';
 	}
 }
@@ -66,7 +65,7 @@ class InvalidIdError extends Error {
 const handleValidateOwnership = (req, document) => {
 	const ownerId = document.owner._id || document.owner;
 	// Check if the current user is also the owner of the document
-	if (!req.user._id.equals(ownerId) || !req.user.role.equals(ROLE.ADMIN)) {
+	if (!req.user._id.equals(ownerId) || !req.user.role === ROLE.ADMIN) {
 		throw new OwnershipError();
 	} else {
 		return document;
@@ -94,8 +93,9 @@ const handleValidateAuthRole = (role) => {
 	return (req, res, next) => {
 		if (req.user.role !== role) {
 			throw new RoleUnauthorizedError();
+		} else {
+			next();
 		}
-		next();
 	};
 };
 

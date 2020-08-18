@@ -25,7 +25,7 @@ router.get('/', (req, res) => {
 router.post(
 	'/',
 	requireToken,
-	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
+	handleValidateAuthRole(ROLE.BUSINESS || ROLE.ADMIN),
 	(req, res, next) => {
 		const newPlace = req.body;
 		const businessId = req.body.business;
@@ -54,7 +54,7 @@ router.delete(
 		const id = req.params.id;
 		Place.findByIdAndRemove(id)
 			.then(handleRecordExists)
-			.then((place) => res.json(place))
+			.then((place) => res.json())
 			.catch((error) => console.log(error));
 	}
 );
