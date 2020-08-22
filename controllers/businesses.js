@@ -58,7 +58,7 @@ router.get('/:id/places', handleValidateId, (req, res) => {
 // 	handleValidateId,
 // 	requireToken,
 // 	(req, res, next) => {
-// 		Business.findByIdAndUpdate(req.params.id, { $addToSet: req.body })
+// 		Business.findByIdAndUpdate(req.params.id, { $set: req.body }) // or $addToSet: ...
 // 			.then((business) => handleValidateOwnership(req, business))
 // 			.then((business) => res.json(business))
 // 			.catch(next);

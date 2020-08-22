@@ -99,7 +99,7 @@ router.get('/:username/businesses', requireToken, (req, res) => {
 ///// UPDATE //////
 //////////////////
 
-//route to edit user information
+//PUT to edit user information (all at once)
 router.put('/:username', requireToken, (req, res) => {
 	const usernameQuery = req.params.username;
 
@@ -107,9 +107,45 @@ router.put('/:username', requireToken, (req, res) => {
 		User.findOneAndUpdate({ username: usernameQuery }, req.body, {
 			new: true,
 		})
-			.then((user) => {
-				return res.json(user);
-			})
+			.then((user) => res.json(user))
+			.catch((error) => console.log(error));
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
+});
+
+//PATCH to edit user information (one or more fields)
+router.patch('/:username', requireToken, (req, res) => {
+	const usernameQuery = req.params.username;
+
+	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
+		User.findOneAndUpdate(
+			{ username: usernameQuery },
+			{
+				$set: req.body,
+			}
+		)
+			.then((user) => res.json(user))
+			.catch((error) => console.log(error));
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
+});
+
+//PATCH to edit user role
+router.patch('/:username/role', requireToken, (req, res) => {
+	const usernameQuery = req.params.username;
+
+	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
+		User.findOneAndUpdate(
+			{ username: usernameQuery },
+			{
+				$set: { role: req.body.role },
+			}
+		)
+			.then((user) => res.json(user.role))
 			.catch((error) => console.log(error));
 	} else {
 		res.json(new RoleUnauthorizedError());
@@ -127,9 +163,7 @@ router.delete('/:username', requireToken, (req, res) => {
 
 	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
 		User.findOneAndDelete({ username: usernameQuery })
-			.then(() => {
-				return res.json(`User Deleted: ${usernameQuery}`);
-			})
+			.then(() => res.json(`User Deleted: ${usernameQuery}`))
 			.catch((error) => console.log(error));
 	} else {
 		res.json(new RoleUnauthorizedError());
