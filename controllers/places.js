@@ -25,7 +25,7 @@ router.get('/', (req, res) => {
 router.post(
 	'/',
 	requireToken,
-	handleValidateAuthRole(ROLE.BUSINESS || ROLE.ADMIN),
+	// handleValidateAuthRole(ROLE.BUSINESS || ROLE.ADMIN),
 	(req, res, next) => {
 		const newPlace = req.body;
 		const businessId = req.body.business;
@@ -48,7 +48,7 @@ router.delete(
 	'/:id',
 	handleValidateId,
 	handleValidateOwnership,
-	handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
+	// handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
 	requireToken,
 	(req, res) => {
 		const id = req.params.id;

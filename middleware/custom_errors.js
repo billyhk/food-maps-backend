@@ -63,11 +63,14 @@ class InvalidIdError extends Error {
 }
 
 const handleValidateOwnership = (req, document) => {
-	const ownerId = document.owner._id || document.owner;
+	const ownerId = document.owner;
+	const userId = req.user._id
+	const role = req.user.role
 	// Check if the current user is also the owner of the document
-	if (!req.user._id.equals(ownerId) || !req.user.role === ROLE.ADMIN) {
+	if (role !== ROLE.ADMIN && userId !== ownerId) {
+		console.log(role, userId, ownerId);
 		throw new OwnershipError();
-	} else {
+	} else if (role === ROLE.ADMIN || userId === ownerId) {
 		return document;
 	}
 };
@@ -89,15 +92,34 @@ const handleValidateId = (req, res, next) => {
 	}
 };
 
-const handleValidateAuthRole = (role) => {
+function handleValidateBusinessAuthRole() {
 	return (req, res, next) => {
-		if (req.user.role !== role) {
+		if (req.user.role !== (ROLE.ADMIN || ROLE.BUSINESS)) {
 			throw new RoleUnauthorizedError();
-		} else {
-			next();
 		}
+		next();
 	};
-};
+}
+
+function handleAuthenticateAdmin() {
+	return (req, res, next) => {
+	if (req.user.role !== ROLE.ADMIN) {
+			throw new RoleUnauthorizedError();
+		}
+		next();
+	};
+}
+
+// const handleUserOwnership = () => {
+// 	return (req, res, next) => {
+// 		if (req.user.username !== req.params.username) {
+// 			throw new RoleUnauthorizedError();
+// 		} else {
+// 			next();
+// 		}
+// 	};
+
+// }
 
 const handleValidationErrors = (err, req, res, next) => {
 	if (err.name.match(/Valid/) || err.name === 'MongoError') {
@@ -128,6 +150,9 @@ module.exports = {
 	handleRecordExists,
 	handleValidateId,
 	handleValidationErrors,
-	handleValidateAuthRole,
+	handleValidateBusinessAuthRole,
+	handleAuthenticateAdmin,
 	handleErrors,
+	RoleUnauthorizedError,
+	// handleUserOwnership
 };

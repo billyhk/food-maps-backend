@@ -5,6 +5,7 @@ const PlaceSchema = new mongoose.Schema(
 		location: {
 			type: [Number],
 			required: true,
+			unique: true
 		},
 		business: {
 			type: mongoose.Schema.Types.ObjectId,

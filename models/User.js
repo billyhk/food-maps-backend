@@ -28,8 +28,8 @@ const userSchema = new mongoose.Schema(
 		],
 		role: {
 			type: String,
+			enum: Object.values(ROLE),
 			default: 'basic',
-			enum: [ROLE.BASIC, ROLE.BUSINESS, ROLE.ADMIN],
 			required: true,
 		},
 	},
