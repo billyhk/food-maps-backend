@@ -4,10 +4,10 @@ const { createUserToken } = require('../middleware/auth');
 const User = require('../models/User');
 const Business = require('../models/Business');
 const {
-	handleValidateId,
-	handleRecordExists,
+	// handleValidateId,
+	// handleRecordExists,
+	// handleUserOwnership,
 	handleAuthenticateAdmin,
-	handleUserOwnership,
 	RoleUnauthorizedError,
 } = require('../middleware/custom_errors');
 const { ROLE } = require('../models/userRoles');
@@ -75,7 +75,24 @@ router.get('/:username', requireToken, (req, res, next) => {
 	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
 		// console.log(req.user.username, req.user.role)
 		User.findOne({ username: usernameQuery })
-			.populate('businesses', '-_id')
+			.populate('businesses', '-id._id')
+			.then((user) => res.json(user))
+			.catch((error) => console.log(error));
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
+});
+
+//GET user by id
+router.get('/id/:id', requireToken, (req, res, next) => {
+	const idQuery = req.params.id;
+
+	// console.log(req.user._id, req.user.role)
+	if (idQuery === req.user._id || req.user.role === ROLE.ADMIN) {
+		// console.log(req.user.id, req.user.role)
+		User.findById(idQuery)
+			.populate('businesses', '-id._id')
 			.then((user) => res.json(user))
 			.catch((error) => console.log(error));
 	} else {
@@ -122,7 +139,7 @@ router.put('/:username', requireToken, (req, res) => {
 	}
 });
 
-//PATCH to edit user information (one or more fields)
+// to edit user information (one or more fields)
 router.patch('/:username', requireToken, (req, res) => {
 	const usernameQuery = req.params.username;
 

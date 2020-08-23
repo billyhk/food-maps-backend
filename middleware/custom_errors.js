@@ -164,6 +164,7 @@ module.exports = {
 	handleAuthenticateAdmin,
 	handleErrors,
 	handleValidateAuthRole,
+	OwnershipError,
 	RoleUnauthorizedError,
 	// handleUserOwnership
 };

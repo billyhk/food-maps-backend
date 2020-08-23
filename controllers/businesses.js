@@ -6,11 +6,12 @@ const { ROLE } = require('../models/userRoles');
 // const businessPrivileges = ROLE.ADMIN || ROLE.BASIC;
 
 const {
+	// handleValidateOwnership,
+	// handleValidateAuthRole,
+	// handleValidateBusinessAuthRole,
 	handleValidateId,
 	handleRecordExists,
-	handleValidateOwnership,
-	handleValidateAuthRole,
-	handleValidateBusinessAuthRole,
+	OwnershipError,
 	RoleUnauthorizedError,
 } = require('../middleware/custom_errors');
 const { requireToken } = require('../middleware/auth');
@@ -34,7 +35,7 @@ router.get('/', (req, res, next) => {
 // api/businesses/5a7db6c74d55bc51bdf39793
 router.get('/:id', handleValidateId, (req, res, next) => {
 	Business.findById(req.params.id)
-		.populate('owner', '_id')
+		.populate('owner', '-id._id')
 		.populate('places', 'location -_id')
 		// .populate('places', '-_id')
 		.then(handleRecordExists)
@@ -49,7 +50,7 @@ router.get('/:id/places', handleValidateId, (req, res) => {
 	Business.findOne({ id: req.params._id })
 		.then((business) => {
 			Place.find({ _id: { $in: business.places } })
-				.populate('business', '-_id')
+				.populate('business', '-id._id')
 				.then((placesList) => res.json(placesList));
 		})
 		.catch((error) => console.log(error));
@@ -87,46 +88,90 @@ router.post('/', requireToken, (req, res, next) => {
 
 // PUT api/businesses/5a7db6c74d55bc51bdf39793
 router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
-	Business.findById(req.params.id)
-		.then(handleRecordExists)
-		// .then((business) => handleValidateOwnership(req, business))
-		// ***** on 94, put a conditional for business/admin roles, and nest another for ownership *****
-		.then((business) => business.set(req.body).save())
-		.then((business) => {
-			res.json(business);
-		})
-		.catch(next);
+	const currentRole = req.user.role;
+	const currentUserId = req.user._id;
+
+	if (currentRole === ROLE.ADMIN || currentRole === ROLE.BUSINESS) {
+		Business.findById(req.params.id)
+			.then(handleRecordExists)
+			.then((business) => {
+				const businessOwnerId = business.owner._id;
+				if (
+					currentRole === ROLE.ADMIN ||
+					currentUserId.toString() == businessOwnerId.toString()
+				) {
+					business.set(req.body).save();
+					res.json(business);
+				} else {
+					res.json(new OwnershipError());
+					throw new OwnershipError();
+				}
+			});
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
+});
+
+router.patch('/:id', handleValidateId, requireToken, (req, res, next) => {
+	const currentRole = req.user.role;
+	const currentUserId = req.user._id;
+
+	if (currentRole === ROLE.ADMIN || currentRole === ROLE.BUSINESS) {
+		Business.findById(req.params.id)
+			.then(handleRecordExists)
+			.then((business) => {
+				const businessOwnerId = business.owner._id;
+				if (
+					currentRole === ROLE.ADMIN ||
+					currentUserId.toString() == businessOwnerId.toString()
+				) {
+					business.set(req.body).save();
+					res.json(business);
+				} else {
+					res.json(new OwnershipError());
+					throw new OwnershipError();
+				}
+			});
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
 });
 
 // the below match might not be used as it was built mainly for keywords which will end up having its own schema with a N:N relationship with businesses
 // PATCH to add to a properties value as array (only if item doesn't already exist)
-// router.patch(
-// 	'/:id/addToOne',
-// 	handleValidateId,
-// 	requireToken,
-// 	(req, res, next) => {
-// 		Business.findByIdAndUpdate(req.params.id, { $set: req.body }) // or $addToSet: ...
-// 			.then((business) => handleValidateOwnership(req, business))
-// 			.then((business) => res.json(business))
-// 			.catch(next);
-// 	}
-// );
-
 router.patch(
-	'/:id/overwriteOne', //this will probably just end up being...
-		 // /:id
+	'/:id/keywords',
 	handleValidateId,
-	// handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
 	requireToken,
 	(req, res, next) => {
-		Business.findByIdAndUpdate(req.params.id)
-			.then(handleRecordExists)
-			.then((business) => handleValidateOwnership(req, business))
-			.then((business) => business.set(req.body).save())
-			.then((business) => {
-				res.json(business);
-			})
-			.catch(next);
+		const currentRole = req.user.role;
+		const currentUserId = req.user._id;
+
+		if (currentRole === ROLE.ADMIN || currentRole === ROLE.BUSINESS) {
+			Business.findById(req.params.id)
+				.then(handleRecordExists)
+				.then((business) => {
+					const businessOwnerId = business.owner._id;
+					if (
+						currentRole === ROLE.ADMIN ||
+						currentUserId.toString() == businessOwnerId.toString()
+					) {
+						Business.findByIdAndUpdate(req.params.id, {
+							$addToSet: { keywords: req.body.keywords },
+						})
+							.then((business) => res.json(business))
+							.catch((error) => console.log(error));
+					} else {
+						res.json(new OwnershipError());
+						throw new OwnershipError();
+					}
+				});
+		} else {
+			res.json(new RoleUnauthorizedError());
+			throw new RoleUnauthorizedError();
+		}
 	}
 );
 
@@ -137,17 +182,30 @@ router.patch(
 // DESTROY
 // DELETE api/businesses/5a7db6c74d55bc51bdf39793
 router.delete('/:id', handleValidateId, requireToken, (req, res, next) => {
-	const businessId = req.params.id;
-	const role = req.user.role;
+	const currentRole = req.user.role;
+	const currentUserId = req.user._id;
 
-	Business.findById(businessId)
-		.then((business) => {
-			handleValidateAuthRole(ROLE.BUSINESS || ROLE.ADMIN);
-
-			// handleValidateOwnership(req, business);
-		})
-		.then(() => res.sendStatus(204))
-		.catch((error) => console.log(error));
+	if (currentRole === ROLE.ADMIN || currentRole === ROLE.BUSINESS) {
+		Business.findById(req.params.id)
+			.then(handleRecordExists)
+			.then((business) => {
+				const businessOwnerId = business.owner._id;
+				if (
+					currentRole === ROLE.ADMIN ||
+					currentUserId.toString() == businessOwnerId.toString()
+				) {
+					Business.findByIdAndDelete(req.params.id)
+						.then((business) => res.json(`Business Deleted: ${business.title}`))
+						.catch((error) => console.log(error));
+				} else {
+					res.json(new OwnershipError());
+					throw new OwnershipError();
+				}
+			});
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
 });
 
 module.exports = router;
