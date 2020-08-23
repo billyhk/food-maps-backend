@@ -63,7 +63,7 @@ router.post('/signin', (req, res, next) => {
 // api/users
 router.get('/', requireToken, handleAuthenticateAdmin(), (req, res) => {
 	User.find()
-		.populate('businesses', 'title -_id')
+		.populate('businesses', '-id._id')
 		.then((users) => res.json(users))
 		.catch((error) => console.log(error));
 });
@@ -132,7 +132,7 @@ router.put('/:username', requireToken, (req, res) => {
 			new: true,
 		})
 			.then((user) => res.json(user))
-			.catch((error) => console.log(error));
+			.catch((error) => res.json(error));
 	} else {
 		res.json(new RoleUnauthorizedError());
 		throw new RoleUnauthorizedError();
@@ -151,7 +151,7 @@ router.patch('/:username', requireToken, (req, res) => {
 			}
 		)
 			.then((user) => res.json(user))
-			.catch((error) => console.log(error));
+			.catch((error) => res.json(error));
 	} else {
 		res.json(new RoleUnauthorizedError());
 		throw new RoleUnauthorizedError();
@@ -170,7 +170,7 @@ router.patch('/:username/role', requireToken, (req, res) => {
 			}
 		)
 			.then((user) => res.json(user))
-			.catch((error) => console.log(error));
+			.catch((error) => res.json(error));
 	} else {
 		res.json(new RoleUnauthorizedError());
 		throw new RoleUnauthorizedError();
@@ -188,7 +188,7 @@ router.delete('/:username', requireToken, (req, res) => {
 	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
 		User.findOneAndDelete({ username: usernameQuery })
 			.then(() => res.json(`User Deleted: ${usernameQuery}`))
-			.catch((error) => console.log(error));
+			.catch((error) => res.json(error));
 	} else {
 		res.json(new RoleUnauthorizedError());
 		throw new RoleUnauthorizedError();
