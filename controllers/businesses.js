@@ -152,7 +152,7 @@ router.patch('/:id', handleValidateId, requireToken, (req, res, next) => {
 // PATCH to add to a values to keywords array (only if item doesn't already exist)
 // the below match might not be used as if keywords gets its own schema with a N:N relationship with businesses
 router.patch(
-	'/:id/keywords',
+	'/:id/keywords-add',
 	handleValidateId,
 	requireToken,
 	(req, res, next) => {
@@ -187,7 +187,7 @@ router.patch(
 
 // PATCH to remove a keyword from the keywords array
 router.patch(
-	'/:id/keywords',
+	'/:id/keywords-remove',
 	handleValidateId,
 	requireToken,
 	(req, res, next) => {
@@ -204,7 +204,7 @@ router.patch(
 						currentUserId.toString() === businessOwnerId.toString()
 					) {
 						Business.findByIdAndUpdate(req.params.id, {
-							$pull: { keywords: [req.body.keywords] },
+							$pull: { keywords: req.body.keywords },
 						})
 							.then((business) => res.json(business))
 							.catch((error) => res.json(error));
