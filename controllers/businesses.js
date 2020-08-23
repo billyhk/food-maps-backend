@@ -34,7 +34,7 @@ router.get('/', (req, res, next) => {
 // api/businesses/5a7db6c74d55bc51bdf39793
 router.get('/:id', handleValidateId, (req, res, next) => {
 	Business.findById(req.params.id)
-		.populate('owner', 'username -_id')
+		.populate('owner', '_id')
 		.populate('places', 'location -_id')
 		// .populate('places', '-_id')
 		.then(handleRecordExists)
@@ -49,7 +49,7 @@ router.get('/:id/places', handleValidateId, (req, res) => {
 	Business.findOne({ id: req.params._id })
 		.then((business) => {
 			Place.find({ _id: { $in: business.places } })
-				.populate('business', 'title -_id')
+				.populate('business', '-_id')
 				.then((placesList) => res.json(placesList));
 		})
 		.catch((error) => console.log(error));
@@ -89,7 +89,8 @@ router.post('/', requireToken, (req, res, next) => {
 router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
 	Business.findById(req.params.id)
 		.then(handleRecordExists)
-		.then((business) => handleValidateOwnership(req, business))
+		// .then((business) => handleValidateOwnership(req, business))
+		// ***** on 94, put a conditional for business/admin roles, and nest another for ownership *****
 		.then((business) => business.set(req.body).save())
 		.then((business) => {
 			res.json(business);
@@ -97,6 +98,7 @@ router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
 		.catch(next);
 });
 
+// the below match might not be used as it was built mainly for keywords which will end up having its own schema with a N:N relationship with businesses
 // PATCH to add to a properties value as array (only if item doesn't already exist)
 // router.patch(
 // 	'/:id/addToOne',
@@ -111,7 +113,8 @@ router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
 // );
 
 router.patch(
-	'/:id/overwriteOne',
+	'/:id/overwriteOne', //this will probably just end up being...
+		 // /:id
 	handleValidateId,
 	// handleValidateAuthRole(ROLE.ADMIN || ROLE.BUSINESS),
 	requireToken,

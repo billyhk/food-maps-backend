@@ -67,10 +67,10 @@ const handleValidateOwnership = (req, document) => {
 	const userId = req.user._id
 	const role = req.user.role
 	// Check if the current user is also the owner of the document
-	if (role !== ROLE.ADMIN && userId !== ownerId) {
+	if (userId !== ownerId) {
 		console.log(role, userId, ownerId);
 		throw new OwnershipError();
-	} else if (role === ROLE.ADMIN || userId === ownerId) {
+	} else {
 		return document;
 	}
 };
