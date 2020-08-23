@@ -55,11 +55,12 @@ router.post('/signin', (req, res, next) => {
 		.catch(next);
 });
 
-/////////////////
-///// GET //////
-///////////////
+//////////////////
+///// GET ///////
+////////////////
 
 //GET all users (ROLE.ADMIN only)
+// api/users
 router.get('/', requireToken, handleAuthenticateAdmin(), (req, res) => {
 	User.find()
 		.populate('businesses', 'title -_id')
@@ -71,28 +72,34 @@ router.get('/', requireToken, handleAuthenticateAdmin(), (req, res) => {
 router.get('/:username', requireToken, (req, res, next) => {
 	const usernameQuery = req.params.username;
 
-	User.findOne({ username: usernameQuery })
-		.populate('businesses', '-_id')
-		.then((user) => {
-			if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
-				return res.json(user);
-			} else {
-				res.json(new RoleUnauthorizedError());
-				throw new RoleUnauthorizedError();
-			}
-		})
-		.catch((error) => console.log(error));
+	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
+		// console.log(req.user.username, req.user.role)
+		User.findOne({ username: usernameQuery })
+			.populate('businesses', '-_id')
+			.then((user) => res.json(user))
+			.catch((error) => console.log(error));
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
 });
 
 //GET businesses by user
 router.get('/:username/businesses', requireToken, (req, res) => {
-	User.findOne({ username: req.params.username })
-		.then((user) => {
-			Business.find({
-				_id: { $in: user.businesses },
-			}).then((businessesList) => res.json(businessesList));
-		})
-		.catch((error) => console.log(error));
+	const usernameQuery = req.params.username;
+
+	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
+		User.findOne({ username: req.params.username })
+			.then((user) => {
+				Business.find({
+					_id: { $in: user.businesses },
+				}).then((businessesList) => res.json(businessesList));
+			})
+			.catch((error) => console.log(error));
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
 });
 
 ////////////////////
@@ -145,7 +152,7 @@ router.patch('/:username/role', requireToken, (req, res) => {
 				$set: { role: req.body.role },
 			}
 		)
-			.then((user) => res.json(user.role))
+			.then((user) => res.json(user))
 			.catch((error) => console.log(error));
 	} else {
 		res.json(new RoleUnauthorizedError());

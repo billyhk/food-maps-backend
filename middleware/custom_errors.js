@@ -110,6 +110,16 @@ function handleAuthenticateAdmin() {
 	};
 }
 
+function handleValidateAuthRole(role) {
+	return (req, res, next) => {
+		if (req.user.role !== ROLE.ADMIN) {
+			throw new RoleUnauthorizedError();
+		}
+		next();
+	};
+}
+
+
 // const handleUserOwnership = () => {
 // 	return (req, res, next) => {
 // 		if (req.user.username !== req.params.username) {
@@ -153,6 +163,7 @@ module.exports = {
 	handleValidateBusinessAuthRole,
 	handleAuthenticateAdmin,
 	handleErrors,
+	handleValidateAuthRole,
 	RoleUnauthorizedError,
 	// handleUserOwnership
 };
