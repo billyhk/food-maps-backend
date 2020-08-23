@@ -3,7 +3,7 @@ const Business = require('../models/Business');
 const Place = require('../models/Place');
 const User = require('../models/User');
 const { ROLE } = require('../models/userRoles');
-const businessPrivileges = ROLE.ADMIN || ROLE.BASIC;
+// const businessPrivileges = ROLE.ADMIN || ROLE.BASIC;
 
 const {
 	handleValidateId,
@@ -11,6 +11,7 @@ const {
 	handleValidateOwnership,
 	handleValidateAuthRole,
 	handleValidateBusinessAuthRole,
+	RoleUnauthorizedError,
 } = require('../middleware/custom_errors');
 const { requireToken } = require('../middleware/auth');
 const router = express.Router();
@@ -63,20 +64,21 @@ router.get('/:id/places', handleValidateId, (req, res) => {
 router.post('/', requireToken, (req, res, next) => {
 	const newBusiness = req.body;
 	const userId = req.user._id;
-	// console.log(req.user.role, ROLE.ADMIN);
-
-	User.findById(userId)
-		.then((user) => {
-			handleValidateAuthRole(ROLE.BUSINESS || ROLE.ADMIN);
-
-			Business.create(newBusiness).then((business) => {
-				user.businesses.push(business);
-				user.save();
-				business.save();
-				res.json(business);
-			});
-		})
-		.catch(next);
+	if (req.user.role === (ROLE.BUSINESS || ROLE.ADMIN)) {
+		User.findById(userId)
+			.then((user) => {
+				Business.create(newBusiness).then((business) => {
+					user.businesses.push(business);
+					user.save();
+					business.save();
+					res.json(business);
+				});
+			})
+			.catch(next);
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
 });
 
 ////////////////////
@@ -84,21 +86,16 @@ router.post('/', requireToken, (req, res, next) => {
 //////////////////
 
 // PUT api/businesses/5a7db6c74d55bc51bdf39793
-router.put(
-	'/:id',
-	handleValidateId,
-	requireToken,
-	(req, res, next) => {
-		Business.findById(req.params.id)
-			.then(handleRecordExists)
-			.then((business) => handleValidateOwnership(req, business))
-			.then((business) => business.set(req.body).save())
-			.then((business) => {
-				res.json(business);
-			})
-			.catch(next);
-	}
-);
+router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
+	Business.findById(req.params.id)
+		.then(handleRecordExists)
+		.then((business) => handleValidateOwnership(req, business))
+		.then((business) => business.set(req.body).save())
+		.then((business) => {
+			res.json(business);
+		})
+		.catch(next);
+});
 
 // PATCH to add to a properties value as array (only if item doesn't already exist)
 // router.patch(
@@ -129,7 +126,6 @@ router.patch(
 			.catch(next);
 	}
 );
-
 
 ////////////////////
 ///// DELETE //////
