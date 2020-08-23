@@ -185,6 +185,41 @@ router.patch(
 	}
 );
 
+// PATCH to remove a keyword from the keywords array
+router.patch(
+	'/:id/keywords',
+	handleValidateId,
+	requireToken,
+	(req, res, next) => {
+		const currentRole = req.user.role;
+		const currentUserId = req.user._id;
+
+		if (currentRole === ROLE.ADMIN || currentRole === ROLE.BUSINESS) {
+			Business.findById(req.params.id)
+				.then(handleRecordExists)
+				.then((business) => {
+					const businessOwnerId = business.owner._id;
+					if (
+						currentRole === ROLE.ADMIN ||
+						currentUserId.toString() === businessOwnerId.toString()
+					) {
+						Business.findByIdAndUpdate(req.params.id, {
+							$pull: { keywords: [req.body.keywords] },
+						})
+							.then((business) => res.json(business))
+							.catch((error) => res.json(error));
+					} else {
+						res.json(new OwnershipError());
+						throw new OwnershipError();
+					}
+				});
+		} else {
+			res.json(new RoleUnauthorizedError());
+			throw new RoleUnauthorizedError();
+		}
+	}
+);
+
 ////////////////////
 ///// DELETE //////
 //////////////////
