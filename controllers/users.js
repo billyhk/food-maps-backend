@@ -76,6 +76,7 @@ router.get('/:username', requireToken, (req, res, next) => {
 		// console.log(req.user.username, req.user.role)
 		User.findOne({ username: usernameQuery })
 			.populate('businesses', '-id._id')
+			.populate('favorites', '-id._id')
 			.then((user) => res.json(user))
 			.catch((error) => console.log(error));
 	} else {
@@ -167,6 +168,44 @@ router.patch('/:username/role', requireToken, (req, res) => {
 			{ username: usernameQuery },
 			{
 				$set: { role: req.body.role },
+			}
+		)
+			.then((user) => res.json(user))
+			.catch((error) => res.json(error));
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
+});
+
+// PATCH to add to favorites
+router.patch('/:username/favorites-add', requireToken, (req, res) => {
+	const usernameQuery = req.params.username;
+
+	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
+		User.findOneAndUpdate(
+			{ username: usernameQuery },
+			{
+				$addToSet: { favorites: req.body.favorites },
+			}
+		)
+			.then((user) => res.json(user))
+			.catch((error) => res.json(error));
+	} else {
+		res.json(new RoleUnauthorizedError());
+		throw new RoleUnauthorizedError();
+	}
+});
+
+// PATCH to remove from favorites
+router.patch('/:username/favorites-remove', requireToken, (req, res) => {
+	const usernameQuery = req.params.username;
+
+	if (usernameQuery === req.user.username || req.user.role === ROLE.ADMIN) {
+		User.findOneAndUpdate(
+			{ username: usernameQuery },
+			{
+				$pull: { favorites: req.body.favorites },
 			}
 		)
 			.then((user) => res.json(user))

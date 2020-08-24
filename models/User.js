@@ -5,6 +5,7 @@ const userSchema = new mongoose.Schema(
 	{
 		name: {
 			type: String,
+			required: true,
 		},
 		email: {
 			type: String,
@@ -26,6 +27,13 @@ const userSchema = new mongoose.Schema(
 				type: mongoose.Schema.Types.ObjectId,
 			},
 		],
+		favorites: [
+			{
+				ref: 'Business',
+				type: mongoose.Schema.Types.ObjectId,
+			},
+		],
+
 		role: {
 			type: String,
 			enum: Object.values(ROLE),
