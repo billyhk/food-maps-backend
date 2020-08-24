@@ -13,6 +13,7 @@ const {
 const userController = require('./controllers/users');
 const businessController = require('./controllers/businesses');
 const placeController = require('./controllers/places');
+const requestController = require('./controllers/requests');
 
 // Instantiate express application object
 const app = express();
@@ -36,6 +37,7 @@ app.use(express.urlencoded({ extended: true }));
 app.use('/api/users', userController);
 app.use('/api/businesses', businessController);
 app.use('/api/places', placeController);
+app.use('/api/requests', requestController);
 
 app.use(handleValidationErrors);
 // The catch all for handling errors

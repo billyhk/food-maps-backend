@@ -3,12 +3,8 @@ const Business = require('../models/Business');
 const Place = require('../models/Place');
 const User = require('../models/User');
 const { ROLE } = require('../models/userRoles');
-// const businessPrivileges = ROLE.ADMIN || ROLE.BASIC;
 
 const {
-	// handleValidateOwnership,
-	// handleValidateAuthRole,
-	// handleValidateBusinessAuthRole,
 	handleValidateId,
 	handleRecordExists,
 	OwnershipError,
@@ -122,6 +118,7 @@ router.put('/:id', handleValidateId, requireToken, (req, res, next) => {
 	}
 });
 
+// PATCH to edit any one field
 router.patch('/:id', handleValidateId, requireToken, (req, res, next) => {
 	const currentRole = req.user.role;
 	const currentUserId = req.user._id;
@@ -164,6 +161,7 @@ router.patch(
 				.then(handleRecordExists)
 				.then((business) => {
 					const businessOwnerId = business.owner._id;
+					// console.log(currentUserId.toString(), businessOwnerId.toString());
 					if (
 						currentRole === ROLE.ADMIN ||
 						currentUserId.toString() === businessOwnerId.toString()
@@ -177,7 +175,8 @@ router.patch(
 						res.json(new OwnershipError());
 						throw new OwnershipError();
 					}
-				});
+				})
+				.catch((error) => res.json(error));
 		} else {
 			res.json(new RoleUnauthorizedError());
 			throw new RoleUnauthorizedError();
@@ -204,7 +203,7 @@ router.patch(
 						currentUserId.toString() === businessOwnerId.toString()
 					) {
 						Business.findByIdAndUpdate(req.params.id, {
-							$pull: { keywords: req.body.keywords },
+							$pull: { keywords: { $in: req.body.keywords } },
 						})
 							.then((business) => res.json(business))
 							.catch((error) => res.json(error));
@@ -212,7 +211,8 @@ router.patch(
 						res.json(new OwnershipError());
 						throw new OwnershipError();
 					}
-				});
+				})
+				.catch((error) => res.json(error));
 		} else {
 			res.json(new RoleUnauthorizedError());
 			throw new RoleUnauthorizedError();
@@ -246,7 +246,8 @@ router.delete('/:id', handleValidateId, requireToken, (req, res, next) => {
 					res.json(new OwnershipError());
 					throw new OwnershipError();
 				}
-			});
+			})
+			.catch((error) => res.json(error));
 	} else {
 		res.json(new RoleUnauthorizedError());
 		throw new RoleUnauthorizedError();

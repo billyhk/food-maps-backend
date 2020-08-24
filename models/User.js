@@ -5,7 +5,12 @@ const userSchema = new mongoose.Schema(
 	{
 		name: {
 			type: String,
+			// required: true,
+		},
+		username: {
+			type: String,
 			required: true,
+			unique: true,
 		},
 		email: {
 			type: String,
@@ -16,10 +21,11 @@ const userSchema = new mongoose.Schema(
 			type: String,
 			required: true,
 		},
-		username: {
+		role: {
 			type: String,
+			enum: Object.values(ROLE),
+			default: 'basic',
 			required: true,
-			unique: true,
 		},
 		businesses: [
 			{
@@ -33,13 +39,12 @@ const userSchema = new mongoose.Schema(
 				type: mongoose.Schema.Types.ObjectId,
 			},
 		],
-
-		role: {
-			type: String,
-			enum: Object.values(ROLE),
-			default: 'basic',
-			required: true,
-		},
+		requests: [
+			{
+				ref: 'Request',
+				type: mongoose.Schema.Types.ObjectId,
+			},
+		],
 	},
 	{
 		id: false,
