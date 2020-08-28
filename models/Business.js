@@ -20,6 +20,50 @@ const BusinessSchema = new mongoose.Schema(
 				// required: true,
 			},
 		],
+		hoursOfOperation: [
+			{
+				monday: {
+					start: { type: String },
+					end: { type: String },
+				},
+			},
+			{
+				tuesday: {
+					start: { type: String },
+					end: { type: String },
+				},
+			},
+			{
+				wednesday: {
+					start: { type: String },
+					end: { type: String },
+				},
+			},
+			{
+				thursday: {
+					start: { type: String },
+					end: { type: String },
+				},
+			},
+			{
+				friday: {
+					start: { type: String },
+					end: { type: String },
+				},
+			},
+			{
+				saturday: {
+					start: { type: String },
+					end: { type: String },
+				},
+			},
+			{
+				sunday: {
+					start: { type: String },
+					end: { type: String },
+				},
+			},
+		],
 		// img: {
 		// 	type: String,
 		// },
@@ -31,7 +75,7 @@ const BusinessSchema = new mongoose.Schema(
 	},
 	{
 		timestamps: true,
-	},
+	}
 );
 
 module.exports = mongoose.model('Business', BusinessSchema);
